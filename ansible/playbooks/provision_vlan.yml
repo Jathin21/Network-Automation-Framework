@@ -1,0 +1,40 @@
+---
+# Provision a VLAN across all switches in the inventory, with optional trunk
+# interface enrollment. Drives the "200+ switches, 4hr -> 12min" workflow
+# referenced in the README.
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.yml playbooks/provision_vlan.yml \
+#     -e "vlan_id=200 vlan_name=PROD_DB trunk_intfs=Ethernet1,Ethernet2"
+
+- name: Pre-flight - confirm required vars
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Ensure required variables are defined
+      ansible.builtin.assert:
+        that:
+          - vlan_id is defined
+          - (vlan_id | int) >= 2 and (vlan_id | int) <= 4094
+          - vlan_name is defined
+          - vlan_name is match("^[A-Za-z0-9_-]+$")
+        fail_msg: |
+          vlan_id must be 2-4094 and vlan_name must match [A-Za-z0-9_-]+.
+
+- name: Provision VLAN on Cisco IOS / NX-OS / Arista
+  hosts: cisco_ios:cisco_nxos:arista_eos
+  gather_facts: no
+  serial: 25  # cap concurrency to be polite to TACACS
+  roles:
+    - role: vlan_provision
+
+- name: Provision VLAN on Juniper Junos
+  hosts: juniper_junos
+  gather_facts: no
+  tasks:
+    - name: Configure VLAN
+      junipernetworks.junos.junos_vlans:
+        config:
+          - name: "{{ vlan_name }}"
+            vlan_id: "{{ vlan_id }}"
+        state: merged

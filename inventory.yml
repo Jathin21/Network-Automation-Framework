@@ -1,0 +1,75 @@
+# Sample multi-vendor, multi-site inventory.
+#
+# Passwords are read from the environment via ${VAR:default} expansion so this
+# file is safe to commit. Any secret left as an empty string is looked up at
+# connect time (e.g., from a vault).
+
+devices:
+  # ------------------------------------------------- HYD-DC-1 (Hyderabad) ----
+  - hostname: hyd-edge-01
+    mgmt_ip: 10.10.1.11
+    platform: cisco_ios
+    site: hyd-dc-1
+    role: edge
+    tags: [bgp, isis, mpls, prod]
+    username: ${NETAUTO_USER:netauto}
+    password: ${NETAUTO_PASS:}
+    secret: ${NETAUTO_ENABLE:}
+
+  - hostname: hyd-edge-02
+    mgmt_ip: 10.10.1.12
+    platform: cisco_ios
+    site: hyd-dc-1
+    role: edge
+    tags: [bgp, isis, mpls, prod]
+
+  - hostname: hyd-core-01
+    mgmt_ip: 10.10.1.21
+    platform: cisco_xr
+    site: hyd-dc-1
+    role: core
+    tags: [isis, mpls, prod]
+
+  - hostname: hyd-tor-01
+    mgmt_ip: 10.10.1.31
+    platform: arista_eos
+    site: hyd-dc-1
+    role: leaf
+    tags: [evpn, vxlan, prod]
+
+  # ------------------------------------------------- BLR-DC-2 (Bangalore) ----
+  - hostname: blr-edge-01
+    mgmt_ip: 10.20.1.11
+    platform: juniper_junos
+    site: blr-dc-2
+    role: edge
+    tags: [bgp, isis, mpls, prod]
+
+  - hostname: blr-core-01
+    mgmt_ip: 10.20.1.21
+    platform: juniper_junos
+    site: blr-dc-2
+    role: core
+    tags: [isis, mpls, prod]
+
+  - hostname: blr-spine-01
+    mgmt_ip: 10.20.1.41
+    platform: cisco_nxos
+    site: blr-dc-2
+    role: spine
+    tags: [evpn, vxlan, prod]
+
+  - hostname: blr-spine-02
+    mgmt_ip: 10.20.1.42
+    platform: cisco_nxos
+    site: blr-dc-2
+    role: spine
+    tags: [evpn, vxlan, prod]
+
+groups:
+  - name: prod-edges
+    members: [hyd-edge-01, hyd-edge-02, blr-edge-01]
+  - name: prod-cores
+    members: [hyd-core-01, blr-core-01]
+  - name: lab-only
+    members: []

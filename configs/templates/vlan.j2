@@ -1,0 +1,25 @@
+{# Provision a single VLAN with name and trunk membership.
+   Vars expected (passed via --vars):
+     vlan_id    - integer, 2-4094
+     vlan_name  - string, no whitespace
+     trunk_intfs - comma-separated list of interface names (optional) #}
+{% if device.platform in ('cisco_ios', 'cisco_nxos', 'arista_eos') %}
+vlan {{ vlan_id }}
+ name {{ vlan_name }}
+{% if trunk_intfs is defined %}
+{% for intf in trunk_intfs.split(',') %}
+interface {{ intf.strip() }}
+ switchport trunk allowed vlan add {{ vlan_id }}
+{% endfor %}
+{% endif %}
+{% elif device.platform == 'juniper_junos' %}
+set vlans {{ vlan_name }} vlan-id {{ vlan_id }}
+{% if trunk_intfs is defined %}
+{% for intf in trunk_intfs.split(',') %}
+set interfaces {{ intf.strip() }} unit 0 family ethernet-switching vlan members {{ vlan_name }}
+{% endfor %}
+{% endif %}
+{% else %}
+{# Unknown platform - emit nothing rather than something wrong #}
+! unsupported platform: {{ device.platform }}
+{% endif %}

@@ -1,0 +1,39 @@
+---
+- name: Configure VLAN on IOS
+  cisco.ios.ios_vlans:
+    config:
+      - vlan_id: "{{ vlan_id }}"
+        name: "{{ vlan_name }}"
+        state: active
+    state: merged
+  when: ansible_network_os == "ios"
+
+- name: Configure VLAN on NX-OS
+  cisco.nxos.nxos_vlans:
+    config:
+      - vlan_id: "{{ vlan_id }}"
+        name: "{{ vlan_name }}"
+        enabled: true
+    state: merged
+  when: ansible_network_os == "nxos"
+
+- name: Configure VLAN on Arista EOS
+  arista.eos.eos_vlans:
+    config:
+      - vlan_id: "{{ vlan_id }}"
+        name: "{{ vlan_name }}"
+        state: active
+    state: merged
+  when: ansible_network_os == "eos"
+
+- name: Add VLAN to trunk interfaces (IOS)
+  cisco.ios.ios_l2_interfaces:
+    config:
+      - name: "{{ item }}"
+        trunk:
+          allowed_vlans: "{{ vlan_id | string }}"
+    state: merged
+  loop: "{{ (trunk_intfs | default('')).split(',') | map('trim') | reject('equalto', '') | list }}"
+  when:
+    - ansible_network_os == "ios"
+    - trunk_intfs is defined

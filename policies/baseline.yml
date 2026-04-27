@@ -1,0 +1,71 @@
+# Baseline compliance policy applied across all production devices.
+#
+# Each rule is checked against a device's running-config; rules use anchored
+# multiline regexes (the auditor compiles them with re.MULTILINE).
+
+- id: SEC-001
+  title: SSH must be version 2 only
+  severity: high
+  platforms: [cisco_ios, cisco_nxos, arista_eos]
+  must_match:
+    - "^ip ssh version 2$"
+  must_not_match:
+    - "^ip ssh version 1"
+    - "^transport input telnet"
+  description: |
+    Telnet must be disabled and SSH forced to v2 across all management
+    interfaces.
+
+- id: SEC-002
+  title: AAA new-model with TACACS+
+  severity: high
+  platforms: [cisco_ios]
+  must_match:
+    - "^aaa new-model$"
+    - "^aaa authentication login default group tacacs\\+ local$"
+  must_not_match:
+    - "^aaa authentication login default local$"
+
+- id: SEC-003
+  title: Login banner present
+  severity: low
+  must_match:
+    - "^banner (login|motd)"
+
+- id: SEC-004
+  title: SNMP v1/v2c communities forbidden
+  severity: critical
+  must_not_match:
+    - "^snmp-server community .* (RO|RW)$"
+  description: |
+    Plain-text community strings are forbidden; only SNMPv3 with auth+priv
+    is permitted in production.
+
+- id: NET-001
+  title: NTP servers configured (at least one)
+  severity: medium
+  must_match:
+    - "^ntp server "
+
+- id: NET-002
+  title: Logging to central syslog
+  severity: medium
+  must_match:
+    - "^logging (host|server) "
+
+- id: BGP-001
+  title: BGP TTL security on eBGP sessions
+  severity: high
+  platforms: [cisco_ios, cisco_xr, arista_eos]
+  must_match:
+    - "neighbor .* ttl-security hops"
+  description: |
+    Generalized TTL Security Mechanism (GTSM, RFC 5082) must be enabled on
+    every eBGP neighbor.
+
+- id: ISIS-001
+  title: ISIS authentication enabled
+  severity: high
+  platforms: [cisco_ios, cisco_xr, juniper_junos]
+  must_match:
+    - "(authentication mode md5|authentication-key|hmac-md5)"

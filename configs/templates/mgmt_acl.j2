@@ -1,0 +1,24 @@
+{# Apply a standard "management plane" ACL: permit only specified subnets to
+   reach the device's management interfaces. Vars expected:
+     acl_name      - string
+     mgmt_subnets  - comma-separated CIDRs, e.g. "10.10.0.0/16,10.20.0.0/16" #}
+{% if device.platform in ('cisco_ios', 'cisco_nxos') %}
+ip access-list extended {{ acl_name }}
+{% for cidr in mgmt_subnets.split(',') %}
+ permit tcp {{ cidr.strip() | ipaddr('network') }} {{ cidr.strip() | ipaddr('hostmask') }} any eq 22
+{% endfor %}
+ deny ip any any log
+{% elif device.platform == 'arista_eos' %}
+ip access-list {{ acl_name }}
+{% for cidr in mgmt_subnets.split(',') %}
+ permit tcp {{ cidr.strip() }} any eq 22
+{% endfor %}
+ deny ip any any log
+{% elif device.platform == 'juniper_junos' %}
+{% for cidr in mgmt_subnets.split(',') %}
+set firewall family inet filter {{ acl_name }} term mgmt-{{ loop.index }} from source-address {{ cidr.strip() }}
+set firewall family inet filter {{ acl_name }} term mgmt-{{ loop.index }} from destination-port ssh
+set firewall family inet filter {{ acl_name }} term mgmt-{{ loop.index }} then accept
+{% endfor %}
+set firewall family inet filter {{ acl_name }} term default then discard
+{% endif %}

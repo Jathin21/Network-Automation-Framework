@@ -1,0 +1,47 @@
+---
+- name: Configure mgmt ACL on IOS
+  cisco.ios.ios_acls:
+    config:
+      - afi: ipv4
+        acls:
+          - name: "{{ acl_name }}"
+            acl_type: extended
+            aces:
+              - sequence: "{{ 10 + (idx * 10) }}"
+                grant: permit
+                protocol: tcp
+                source:
+                  address: "{{ item.split('/')[0] }}"
+                destination:
+                  any: true
+                  port_protocol:
+                    eq: ssh
+                remarks:
+                  - "auto-managed by netauto"
+    state: merged
+  loop: "{{ mgmt_subnets }}"
+  loop_control:
+    index_var: idx
+  when: ansible_network_os == "ios"
+
+- name: Configure mgmt ACL on Arista
+  arista.eos.eos_acls:
+    config:
+      - afi: ipv4
+        acls:
+          - name: "{{ acl_name }}"
+            aces:
+              - sequence: "{{ 10 + (idx * 10) }}"
+                grant: permit
+                protocol: tcp
+                source:
+                  subnet_address: "{{ item }}"
+                destination:
+                  any: true
+                  port_protocol:
+                    eq: ssh
+    state: merged
+  loop: "{{ mgmt_subnets }}"
+  loop_control:
+    index_var: idx
+  when: ansible_network_os == "eos"

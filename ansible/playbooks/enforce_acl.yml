@@ -1,0 +1,14 @@
+---
+# Enforce a baseline management-plane ACL across every Cisco/Arista device.
+
+- name: Enforce baseline mgmt ACL
+  hosts: cisco_ios:cisco_nxos:arista_eos
+  gather_facts: no
+  serial: 25
+  vars:
+    acl_name: MGMT_PLANE_ACL
+    mgmt_subnets:
+      - 10.10.0.0/16
+      - 10.20.0.0/16
+  roles:
+    - role: acl_enforce
